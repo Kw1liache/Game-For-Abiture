@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+python-dotenv
+requests
+httpx
+beautifulsoup4
+trafilatura
+pgvector
+pydantic
+numpy
+playwright

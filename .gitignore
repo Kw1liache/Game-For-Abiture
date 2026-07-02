@@ -1,0 +1,44 @@
+# IDE settings
+.idea/
+.vs/
+
+# Unity генерируемые папки
+/[L|l]ibrary/
+/[T|t]emp/
+/[O|o]bj/
+/[B|b]uild/
+/[B|b]uilds/
+/[L|l]ogs/
+/[U|u]ser[S|s]ettings/
+MemoryCaptures/
+Recording/
+
+# Вложенные Unity проекты
+**/Library/
+**/Temp/
+**/Logs/
+**/UserSettings/
+**/Obj/
+**/Build/
+**/Builds/
+
+# C# / .NET файлы
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.opendb
+*.VC.db
+**/bin/
+**/obj/
+
+# Системные файлы
+.DS_Store
+Thumbs.db

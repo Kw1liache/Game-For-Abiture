@@ -1,0 +1,74 @@
+﻿services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: urfu_pgvector
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: urfu_game
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/01-vector.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d urfu_game"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: urfu_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/urfu_game
+      GIGACHAT_AUTH_URL: ${GIGACHAT_AUTH_URL}
+      GIGACHAT_API_URL: ${GIGACHAT_API_URL}
+      GIGACHAT_EMBEDDINGS_URL: ${GIGACHAT_EMBEDDINGS_URL:-https://gigachat.devices.sberbank.ru/api/v1/embeddings}
+      GIGACHAT_SCOPE: ${GIGACHAT_SCOPE:-GIGACHAT_API_PERS}
+      GIGACHAT_CLIENT_ID: ${GIGACHAT_CLIENT_ID}
+      GIGACHAT_CLIENT_SECRET: ${GIGACHAT_CLIENT_SECRET}
+      GIGACHAT_VERIFY_SSL: ${GIGACHAT_VERIFY_SSL:-false}
+      ADMIN_TOKEN: ${ADMIN_TOKEN}
+      N8N_UNITY_API_KEY: ${N8N_UNITY_API_KEY}
+      EMBEDDING_DIM: ${EMBEDDING_DIM:-1024}
+      TOP_K: ${TOP_K:-5}
+      MAX_CONTEXT_CHARS: ${MAX_CONTEXT_CHARS:-6000}
+      MIN_PAGE_TEXT_CHARS: ${MIN_PAGE_TEXT_CHARS:-120}
+      MAX_PAGES: ${MAX_PAGES:-20}
+      CRAWL_DELAY: ${CRAWL_DELAY:-3.0}
+    ports:
+      - "8000:8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: urfu_n8n
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      N8N_EDITOR_BASE_URL: ${N8N_EDITOR_BASE_URL:-http://localhost:5678}
+      WEBHOOK_URL: ${WEBHOOK_URL:-http://localhost:5678}
+      # HTTP по Tailscale/LAN без HTTPS — иначе n8n не пускает в UI (secure cookie)
+      N8N_SECURE_COOKIE: "false"
+      GENERIC_TIMEZONE: Europe/Moscow
+      ADMIN_TOKEN: ${ADMIN_TOKEN}
+      N8N_UNITY_API_KEY: ${N8N_UNITY_API_KEY}
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  pgdata:
+  n8n_data:

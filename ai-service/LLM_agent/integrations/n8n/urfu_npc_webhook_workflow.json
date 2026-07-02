@@ -1,0 +1,132 @@
+{
+  "name": "URFU NPC Gateway (Secure)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "urfu-npc-ask",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "Webhook_In",
+      "name": "Webhook In",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        260,
+        260
+      ],
+      "webhookId": "urfu-npc-ask"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $json.body ?? $json;\nconst headers = $json.headers ?? {};\n\nif (!b.npc_id || !b.question) {\n  throw new Error('npc_id and question are required');\n}\n\nconst requestId =\n  headers['x-request-id'] ??\n  headers['X-Request-Id'] ??\n  `${Date.now()}-${Math.random().toString(16).slice(2)}`;\n\nreturn [{\n  json: {\n    npc_id: b.npc_id,\n    question: b.question,\n    player_id: b.player_id ?? null,\n    session_id: b.session_id ?? null,\n    metadata: b.metadata ?? {},\n    request_id: requestId\n  }\n}];"
+      },
+      "id": "Prepare_Request",
+      "name": "Prepare Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/v1/game/ask",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json}}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "Call_RAG_API",
+      "name": "Call RAG API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        780,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "if (!$json.npc_id || !$json.answer) {\n  throw new Error('Backend returned invalid response');\n}\n\nreturn [{\n  json: {\n    npc_id: $json.npc_id,\n    answer: $json.answer,\n    sources: Array.isArray($json.sources) ? $json.sources : []\n  }\n}];"
+      },
+      "id": "Validate_Response",
+      "name": "Validate Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "Webhook_Response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1240,
+        260
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook In": {
+      "main": [
+        [
+          {
+            "node": "Prepare Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Request": {
+      "main": [
+        [
+          {
+            "node": "Call RAG API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call RAG API": {
+      "main": [
+        [
+          {
+            "node": "Validate Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Response": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

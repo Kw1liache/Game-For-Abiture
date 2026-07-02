@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual env
+venv/
+.venv/
+env/
+LLM_agent/venv/
+
+# Secrets
+.env
+LLM_agent/.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# AI models
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+local_models/
+LLM_agent/app/local_models/
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
